@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heap Hero: Simulasi Perusahaan & Kode</title>
+    <style>
+        /* Desain UX: Warna soft, mudah dibaca, dan kontras yang aman */
+        :root {
+            --bg-color: #f0f4f8;
+            --primary: #4a90e2;
+            --secondary: #50e3c2;
+            --text-dark: #333333;
+            --text-light: #ffffff;
+            --node-bg: #ffffff;
+            --node-border: #4a90e2;
+            --highlight: #ffeaa7; /* Kuning soft untuk highlight */
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            margin-top: 0;
+            color: #666;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Area Kontrol */
+        .controls {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 150px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-light);
+        }
+
+        button:active { transform: scale(0.95); }
+        button:disabled {
+            background-color: #cccccc !important;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #btn-insert { background-color: var(--primary); }
+        #btn-insert:hover:not(:disabled) { background-color: #357abd; }
+
+        #btn-extract { background-color: #e74c3c; }
+        #btn-extract:hover:not(:disabled) { background-color: #c0392b; }
+
+        /* Storytelling Log */
+        .log-box {
+            background: white;
+            width: 100%;
+            max-width: 900px;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            min-height: 25px;
+            color: var(--primary);
+            border-left: 5px solid var(--primary);
+        }
+
+        /* Layout Utama: Kiri Animasi, Kanan Kode */
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1100px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* Area Pohon Animasi */
+        .tree-container {
+            position: relative;
+            flex: 1;
+            min-width: 400px;
+            height: 450px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        /* Node / Karyawan */
+        .node {
+            position: absolute;
+            width: 46px; height: 46px;
+            background-color: var(--node-bg);
+            border: 3px solid var(--node-border);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 16px;
+            z-index: 2;
+            transition: all 0.6s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .node.highlight {
+            background-color: var(--highlight);
+            border-color: #f39c12;
+            transform: scale(1.2);
+        }
+
+        .node.success {
+            background-color: var(--secondary);
+            border-color: #1abc9c;
+            color: white;
+        }
+
+        /* Area Kode Sinkronisasi */
+        .code-container {
+            flex: 1;
+            min-width: 400px;
+            height: 450px;
+            background: var(--code-bg);
+            color: var(--code-text);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .code-line {
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            margin: 2px 0;
+            white-space: pre;
+        }
+
+        /* Warna Highlight saat animasi berjalan */
+        .code-line.active {
+            background-color: #fdcb6e;
+            color: #2d3436;
+            font-weight: bold;
+        }
+
+        /* Styling spesifik warna syntax agar lebih cantik */
+        .keyword { color: #74b9ff; }
+        .function { color: #55efc4; }
+        .comment { color: #b2bec3; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <h1>🏢 Heap Hero: Animasi & Live Code</h1>
+    <p class="subtitle">Perhatikan narasi di bawah ini dan kotak kode di sebelah kanan!</p>
+
+    <div class="controls">
+        <input type="number" id="node-value" placeholder="Nilai Karyawan" min="1" max="999">
+        <button id="btn-insert" onclick="insertNode()">➕ Rekrut Karyawan Baru</button>
+        <button id="btn-extract" onclick="extractMax()">👑 CEO Pensiun (Extract)</button>
+    </div>
+
+    <div class="log-box" id="log-message">
+        👋 Sistem Siap. Silakan masukkan data pertama!
+    </div>
+
+    <div class="main-layout">
+        <div class="tree-container" id="tree">
+            <svg id="lines"></svg>
+        </div>
+
+        <div class="code-container" id="code-box">
+<div class="code-line comment">// == FUNGSI MENAMBAH DATA ==</div>
+<div class="code-line" id="code-ins-start"><span class="keyword">void</span> <span class="function">masukkanData</span>(<span class="keyword">int</span> angkaBaru) {</div>
+<div class="code-line" id="code-ins-push">    heap[ukuran] = angkaBaru;</div>
+<div class="code-line" id="code-ins-init">    <span class="keyword">int</span> indexSekarang = ukuran;</div>
+<div class="code-line">    ukuran++;</div>
+<div class="code-line"></div>
+<div class="code-line comment">    // Proses Naik Jabatan (Bubble Up)</div>
+<div class="code-line" id="code-ins-while">    <span class="keyword">while</span> (indexSekarang != 0) {</div>
+<div class="code-line" id="code-ins-ayah">        <span class="keyword">int</span> indexAyah = (indexSekarang - 1) / 2;</div>
+<div class="code-line" id="code-ins-if">        <span class="keyword">if</span> (heap[indexSekarang] > heap[indexAyah]) {</div>
+<div class="code-line" id="code-ins-swap">            <span class="function">tukar</span>(&heap[indexSekarang], &heap[indexAyah]);</div>
+<div class="code-line" id="code-ins-update">            indexSekarang = indexAyah;</div>
+<div class="code-line" id="code-ins-else">        } <span class="keyword">else</span> {</div>
+<div class="code-line" id="code-ins-break">            <span class="keyword">break</span>;</div>
+<div class="code-line">        }</div>
+<div class="code-line">    }</div>
+<div class="code-line">}</div>
+<div class="code-line"></div>
+<div class="code-line comment">// == FUNGSI MENGAMBIL DATA PUNCAK ==</div>
+<div class="code-line" id="code-ext-start"><span class="keyword">int</span> <span class="function">ambilMaksimal</span>() {</div>
+<div class="code-line" id="code-ext-get">    <span class="keyword">int</span> nilaiMaksimal = heap[0];</div>
+<div class="code-line" id="code-ext-replace">    heap[0] = heap[ukuran - 1];</div>
+<div class="code-line">    ukuran--;</div>
+<div class="code-line" id="code-ext-call">    <span class="function">perbaikiKeBawah</span>(0);</div>
+<div class="code-line">    <span class="keyword">return</span> nilaiMaksimal;</div>
+<div class="code-line">}</div>
+<div class="code-line"></div>
+<div class="code-line comment">// == FUNGSI TURUN JABATAN (HEAPIFY DOWN) ==</div>
+<div class="code-line" id="code-hd-start"><span class="keyword">void</span> <span class="function">perbaikiKeBawah</span>(<span class="keyword">int</span> index) {</div>
+<div class="code-line" id="code-hd-init">    <span class="keyword">int</span> indexTerbesar = index;</div>
+<div class="code-line">    <span class="keyword">int</span> anakKiri = (2 * index) + 1;</div>
+<div class="code-line">    <span class="keyword">int</span> anakKanan = (2 * index) + 2;</div>
+<div class="code-line"></div>
+<div class="code-line" id="code-hd-cek">    // Cek siapa yang paling hebat: Atasan, Anak Kiri, atau Kanan?</div>
+<div class="code-line" id="code-hd-swap-check">    <span class="keyword">if</span> (indexTerbesar != index) {</div>
+<div class="code-line" id="code-hd-swap">        <span class="function">tukar</span>(&heap[index], &heap[indexTerbesar]);</div>
+<div class="code-line" id="code-hd-recurse">        <span class="function">perbaikiKeBawah</span>(indexTerbesar);</div>
+<div class="code-line">    }</div>
+<div class="code-line">}</div>
+        </div>
+    </div>
+
+    <script>
+        let heap = [];
+        const treeContainer = document.getElementById('tree');
+        const linesSvg = document.getElementById('lines');
+        const logMessage = document.getElementById('log-message');
+        const btnInsert = document.getElementById('btn-insert');
+        const btnExtract = document.getElementById('btn-extract');
+        const inputVal = document.getElementById('node-value');
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        function toggleControls(state) {
+            btnInsert.disabled = !state;
+            btnExtract.disabled = !state || heap.length === 0;
+            inputVal.disabled = !state;
+        }
+
+        function setLog(msg) { logMessage.innerText = msg; }
+
+        function highlightCode(lineId) {
+            document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+            if (!lineId) return; 
+            
+            const el = document.getElementById(lineId);
+            if (el) {
+                el.classList.add('active');
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
+
+        function getPosition(index, totalNodes) {
+            const level = Math.floor(Math.log2(index + 1));
+            const maxNodesInLevel = Math.pow(2, level);
+            const positionInLevel = index - (maxNodesInLevel - 1);
+            
+            const containerWidth = treeContainer.clientWidth;
+            const ySpacing = 80;
+            const xSpacing = containerWidth / (maxNodesInLevel + 1);
+            const x = xSpacing * (positionInLevel + 1) - 23; 
+            const y = level * ySpacing + 30;
+            
+            return { x, y };
+        }
+
+        function renderHeap(highlightIndices = [], successIndices = []) {
+            treeContainer.innerHTML = '<svg id="lines"></svg>'; 
+            const svg = document.getElementById('lines');
+
+            for (let i = 0; i < heap.length; i++) {
+                const parentPos = getPosition(i, heap.length);
+                const leftChildIdx = 2 * i + 1;
+                const rightChildIdx = 2 * i + 2;
+
+                if (leftChildIdx < heap.length) {
+                    const leftPos = getPosition(leftChildIdx, heap.length);
+                    drawLine(svg, parentPos.x + 23, parentPos.y + 23, leftPos.x + 23, leftPos.y + 23);
+                }
+                if (rightChildIdx < heap.length) {
+                    const rightPos = getPosition(rightChildIdx, heap.length);
+                    drawLine(svg, parentPos.x + 23, parentPos.y + 23, rightPos.x + 23, rightPos.y + 23);
+                }
+            }
+
+            for (let i = 0; i < heap.length; i++) {
+                const pos = getPosition(i, heap.length);
+                const node = document.createElement('div');
+                node.className = 'node';
+                node.innerText = heap[i];
+                node.style.left = pos.x + 'px';
+                node.style.top = pos.y + 'px';
+
+                if (highlightIndices.includes(i)) node.classList.add('highlight');
+                if (successIndices.includes(i)) node.classList.add('success');
+
+                treeContainer.appendChild(node);
+            }
+        }
+
+        function drawLine(svg, x1, y1, x2, y2) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+            line.setAttribute('stroke', '#bdc3c7'); line.setAttribute('stroke-width', '3');
+            svg.appendChild(line);
+        }
+
+        // --- OPERASI INSERT BERSAMAAN DENGAN KODE ---
+        async function insertNode() {
+            const val = parseInt(inputVal.value);
+            if (isNaN(val)) {
+                setLog("⚠️ Jangan kosong! Ketik nilai karyawannya dulu ya."); return;
+            }
+            if (heap.length >= 15) {
+                setLog("⚠️ Ruangan penuh! Maksimal cuma bisa tampung 4 lantai."); return;
+            }
+
+            toggleControls(false); inputVal.value = '';
+
+            highlightCode('code-ins-start'); await sleep(800);
+            highlightCode('code-ins-push'); await sleep(800);
+            
+            heap.push(val);
+            let currentIndex = heap.length - 1;
+            
+            setLog(`🚶 Karyawan baru (${val}) masuk dari pintu bawah, duduk di kursi terakhir.`);
+            highlightCode('code-ins-init');
+            renderHeap([currentIndex]);
+            await sleep(2000);
+
+            while (currentIndex > 0) {
+                highlightCode('code-ins-while'); await sleep(800);
+                highlightCode('code-ins-ayah');
+                
+                let parentIndex = Math.floor((currentIndex - 1) / 2);
+                
+                setLog(`🔍 Evaluasi: Karyawan nanya ke Bos, "Nilaiku (${heap[currentIndex]}) lebih gede nggak dari bos (${heap[parentIndex]})?"`);
+                renderHeap([currentIndex, parentIndex]);
+                await sleep(2500);
+
+                highlightCode('code-ins-if'); await sleep(1000);
+
+                if (heap[currentIndex] > heap[parentIndex]) {
+                    setLog(`📈 Wih lebih hebat! Dia NAIK JABATAN (Tukar Kursi).`);
+                    highlightCode('code-ins-swap');
+                    
+                    let temp = heap[currentIndex];
+                    heap[currentIndex] = heap[parentIndex];
+                    heap[parentIndex] = temp;
+                    
+                    renderHeap([currentIndex, parentIndex]); 
+                    await sleep(2000);
+                    
+                    highlightCode('code-ins-update'); await sleep(800);
+                    currentIndex = parentIndex;
+                } else {
+                    highlightCode('code-ins-else'); await sleep(800);
+                    setLog(`✅ Bos masih lebih jago. Yaudah, si karyawan anteng di kursinya sekarang.`);
+                    highlightCode('code-ins-break'); await sleep(1500);
+                    break;
+                }
+            }
+
+            setLog("🎉 Penempatan karyawan baru selesai! Lanjut masukin yang lain?");
+            highlightCode(''); 
+            renderHeap([], [currentIndex]);
+            await sleep(1000);
+            renderHeap();
+            toggleControls(true);
+        }
+
+        // --- OPERASI EXTRACT BERSAMAAN DENGAN KODE ---
+        async function extractMax() {
+            if (heap.length === 0) return;
+            toggleControls(false);
+
+            highlightCode('code-ext-start'); await sleep(800);
+            highlightCode('code-ext-get'); 
+
+            const ceoVal = heap[0];
+            setLog(`👋 CEO Puncak (Nilai ${ceoVal}) pensiun. Waduh kursi bos kosong nih!`);
+            renderHeap([0]);
+            await sleep(2000);
+
+            if (heap.length === 1) {
+                heap.pop();
+                setLog("🏢 Bosnya pensiun dan nggak ada sisa karyawan. Perusahaan tutup!");
+                highlightCode(''); renderHeap(); toggleControls(true);
+                return;
+            }
+
+            highlightCode('code-ext-replace');
+            const bottomVal = heap.pop();
+            heap[0] = bottomVal;
+            
+            setLog(`⬆️ Karyawan anak bawang (${bottomVal}) dipanggil buat jadi Bos sementara.`);
+            renderHeap([0]);
+            await sleep(2000);
+
+            highlightCode('code-ext-call'); await sleep(1000);
+            
+            let currentIndex = 0;
+            
+            while (true) {
+                highlightCode('code-hd-start'); await sleep(800);
+                highlightCode('code-hd-init'); await sleep(800);
+                highlightCode('code-hd-cek');
+
+                let leftChildIdx = 2 * currentIndex + 1;
+                let rightChildIdx = 2 * currentIndex + 2;
+                let largestIdx = currentIndex;
+
+                if (leftChildIdx < heap.length && heap[leftChildIdx] > heap[largestIdx]) largestIdx = leftChildIdx;
+                if (rightChildIdx < heap.length && heap[rightChildIdx] > heap[largestIdx]) largestIdx = rightChildIdx;
+
+                setLog(`🔍 Evaluasi: Bos sementara (${heap[currentIndex]}) dites melawan dua anak buahnya...`);
+                await sleep(2000);
+
+                highlightCode('code-hd-swap-check'); await sleep(1000);
+
+                if (largestIdx !== currentIndex) {
+                    setLog(`📉 Oops, anak buahnya (${heap[largestIdx]}) lebih hebat! Bos sadar diri dan turun jabatan.`);
+                    highlightCode('code-hd-swap');
+                    renderHeap([currentIndex, largestIdx]);
+                    await sleep(2000);
+
+                    let temp = heap[currentIndex];
+                    heap[currentIndex] = heap[largestIdx];
+                    heap[largestIdx] = temp;
+
+                    renderHeap([currentIndex, largestIdx]);
+                    await sleep(1500);
+                    
+                    highlightCode('code-hd-recurse'); await sleep(800);
+                    currentIndex = largestIdx;
+                } else {
+                    break;
+                }
+            }
+
+            setLog("✅ Sip! Struktur perusahaan kembali sah dan rapi.");
+            highlightCode(''); 
+            renderHeap([], [currentIndex]);
+            await sleep(1500);
+            renderHeap();
+            toggleControls(true);
+        }
+
+        renderHeap();
+        toggleControls(true);
+    </script>
+</body>
+</html>
